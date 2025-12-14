@@ -25,7 +25,6 @@ class _AddSuiviSantePageState extends State<AddSuiviSantePage> {
     });
 
     setState(() => isSaving = false);
-
     Navigator.pop(context);
   }
 
@@ -38,26 +37,64 @@ class _AddSuiviSantePageState extends State<AddSuiviSantePage> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Text("Patient: ${widget.patientId}"),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _controller,
-              maxLines: 5,
-              decoration: const InputDecoration(
-                hintText: "Écrire le suivi médical...",
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: isSaving ? null : saveSuivi,
-              child: isSaving
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text("Enregistrer"),
-            ),
-          ],
+
+        // 🔥 Récupération du patient
+        child: FutureBuilder<DocumentSnapshot>(
+          future: FirebaseFirestore.instance
+              .collection("users")
+              .doc(widget.patientId)
+              .get(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (!snapshot.data!.exists) {
+              return const Center(child: Text("Patient introuvable"));
+            }
+
+            final patient = snapshot.data!.data() as Map<String, dynamic>;
+            final profile = patient["profile"] ?? {};
+            final prenom = profile["prenom"] ?? "";
+            final nom = profile["nom"] ?? "";
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ✅ Nom + Prénom au lieu de l'ID
+                Text(
+                  "Patient : $prenom $nom",
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                TextField(
+                  controller: _controller,
+                  maxLines: 5,
+                  decoration: const InputDecoration(
+                    hintText: "Écrire le suivi médical...",
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: isSaving ? null : saveSuivi,
+                    child: isSaving
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text("Enregistrer"),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

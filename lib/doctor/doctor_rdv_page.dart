@@ -7,20 +7,18 @@ class DoctorRDVPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String doctorId = FirebaseAuth.instance.currentUser!.uid;
+    final String doctorId = FirebaseAuth.instance.currentUser!.uid;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Mes Rendez-vous"),
+        title: const Text("Mes rendez-vous"),
         backgroundColor: Colors.blue,
       ),
-
-      body: StreamBuilder(
+      body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection("appointments")
             .where("doctorId", isEqualTo: doctorId)
-            .snapshots(),   // 🔥 ORDER BY SUPPRIMÉ
-
+            .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
@@ -30,7 +28,7 @@ class DoctorRDVPage extends StatelessWidget {
 
           if (rdvs.isEmpty) {
             return const Center(
-              child: Text("Aucun rendez-vous pour le moment."),
+              child: Text("Aucun rendez-vous pour le moment"),
             );
           }
 
@@ -42,6 +40,7 @@ class DoctorRDVPage extends StatelessWidget {
               final status = rdv["status"];
 
               return Card(
+                elevation: 3,
                 margin: const EdgeInsets.symmetric(vertical: 8),
                 child: Padding(
                   padding: const EdgeInsets.all(12),
@@ -56,11 +55,11 @@ class DoctorRDVPage extends StatelessWidget {
                         ),
                       ),
 
-                      const SizedBox(height: 5),
+                      const SizedBox(height: 6),
 
                       Text("Date : ${rdv['date']} à ${rdv['time']}"),
 
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 8),
 
                       Text(
                         "Statut : $status",
@@ -74,33 +73,43 @@ class DoctorRDVPage extends StatelessWidget {
                         ),
                       ),
 
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 12),
 
-                      if (status == "pending") Row(
-                        children: [
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
+                      // ✅ BOUTONS AVEC LARGEUR CONTRÔLÉE
+                      if (status == "pending")
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                ),
+                                onPressed: () {
+                                  rdv.reference.update(
+                                    {"status": "accepted"},
+                                  );
+                                },
+                                child: const Text("Accepter"),
+                              ),
                             ),
-                            onPressed: () {
-                              rdv.reference.update({"status": "accepted"});
-                            },
-                            child: const Text("Accepter"),
-                          ),
 
-                          const SizedBox(width: 10),
+                            const SizedBox(width: 10),
 
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
+                            Expanded(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                ),
+                                onPressed: () {
+                                  rdv.reference.update(
+                                    {"status": "rejected"},
+                                  );
+                                },
+                                child: const Text("Rejeter"),
+                              ),
                             ),
-                            onPressed: () {
-                              rdv.reference.update({"status": "rejected"});
-                            },
-                            child: const Text("Rejeter"),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
                     ],
                   ),
                 ),
